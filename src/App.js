@@ -59,6 +59,12 @@ export default App;
 
 const TodoItem = ({ todoData }) => {
   const { istodocompleted, todoitem } = todoData;
+  console.log(istodocompleted, istodocompleted ? "true" : "false");
 
-  return <div>{todoitem}</div>;
+  return (
+    <div style={istodocompleted ? { color: "blue" } : { color: "green" }}>
+      {todoitem}
+      {istodocompleted}
+    </div>
+  );
 };

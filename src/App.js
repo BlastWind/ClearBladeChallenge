@@ -5,6 +5,7 @@ import { ClearBlade } from "clearblade-js-client";
 import { useEffect, useState } from "react";
 
 function App() {
+  const [isClientLoading, setIsClientLoading] = useState(true);
   useEffect(() => {
     const cb = new ClearBlade();
 
@@ -17,13 +18,16 @@ function App() {
       callback: initCallback,
     });
 
-    function initCallback(err, cb) {
+    function initCallback(err, _) {
+      setIsClientLoading(false);
       // err is a boolean, cb has APIs and constructors attached
       if (err) {
         throw new Error(cb);
       } else {
-        console.log("success, ", { cb });
-        var collection = cb.collection();
+        var collection = cb.Collection("test-collection");
+        collection.columns((err, columnsArray) => {
+          console.log({ columnsArray });
+        });
         /*
         collection.fetch(someQuery, collectionFetchCallback(err, rows) {
           if (err) {
@@ -35,7 +39,15 @@ function App() {
     }
   }, []);
 
-  return <div className="App">placeholder</div>;
+  return (
+    <div className="App">
+      {isClientLoading ? (
+        <div>Client is loading, please be patient</div>
+      ) : (
+        <div>Client loaded! should be loading some collection stuff!</div>
+      )}
+    </div>
+  );
 }
 
 export default App;

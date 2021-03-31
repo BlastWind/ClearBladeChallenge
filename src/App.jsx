@@ -1,6 +1,7 @@
 import "./App.css";
 import "clearblade-js-client/lib/mqttws31";
 import { ClearBlade } from "clearblade-js-client";
+import { URL, systemKey, systemSecret, email, password } from "./secrets.js";
 import { useEffect, useState, useRef } from "react";
 import { SlippableList, SlippableListItem } from "react-slipping-list";
 import TodoItem from "./components/TodoItem.tsx";
@@ -13,11 +14,11 @@ function App() {
 
   useEffect(() => {
     cb.current.init({
-      URI: "https://platform.clearblade.com", // e.g., 'https://platform.clearblade.com'
-      systemKey: "86daa4860cceef81fcbeef87a469",
-      systemSecret: "86DAA4860CD8B5A7F7CDE4DFEC9101",
-      email: "test@gmail.com", // use registerEmail instead if you wish to create a new user
-      password: "test@gmail.com",
+      URI: URL, // e.g., 'https://platform.clearblade.com'
+      systemKey: systemKey,
+      systemSecret: systemSecret,
+      email: email, // use registerEmail instead if you wish to create a new user
+      password: password,
       callback: initCallback,
     });
 

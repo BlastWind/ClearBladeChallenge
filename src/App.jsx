@@ -1,17 +1,14 @@
-import logo from "./logo.svg";
 import "./App.css";
 import "clearblade-js-client/lib/mqttws31";
 import { ClearBlade } from "clearblade-js-client";
 import { useEffect, useState, useRef } from "react";
 import { SlippableList, SlippableListItem } from "react-slipping-list";
+import TodoItem from "./components/TodoItem.tsx";
 
 function App() {
   const [isClientLoading, setIsClientLoading] = useState(true);
   const [isTodoLoading, setIsTodoLoading] = useState(true);
   const [todoItems, setTodoItems] = useState([]);
-  const [notificationItems, setNotificationItems] = useState([]);
-  const queryObj = useRef(null);
-  const collectionObj = useRef(null);
   const cb = useRef(new ClearBlade());
 
   useEffect(() => {
@@ -31,11 +28,14 @@ function App() {
         throw new Error(cb.current);
       } else {
         // cached using useRef, so I can use in onCheckBoxClick
-        queryObj.current = cb.current.Query("cceea4860cccdeb4c19d8884e27a");
-        collectionObj.current = cb.current.Collection(
+        const queryObj = cb.current.Query("cceea4860cccdeb4c19d8884e27a");
+        const collectionObj = cb.current.Collection(
           "cceea4860cccdeb4c19d8884e27a"
         );
-        collectionObj.current.fetch(queryObj.current, (err, itemArray) => {
+        collectionObj.fetch(queryObj, (err, itemArray) => {
+          if (err) {
+            throw new Error(err);
+          }
           setIsTodoLoading(false);
           setTodoItems(itemArray);
         });
@@ -44,10 +44,11 @@ function App() {
   }, []);
 
   const onCheckBoxClick = (clickedId) => {
+    // Implementation Decision:
     // could set id attribute on input field and use event.target.id here
     // but that exposes item id to the user in the HTML!
 
-    // First, updated local UI
+    // First, update UI
     let newTodoCompletedValue = null;
     const newItems = todoItems.map((eachItem, i) => {
       if (clickedId === eachItem.data.item_id) {
@@ -64,18 +65,43 @@ function App() {
     });
     setTodoItems(newItems);
 
-    // Second and Lastly, update database
-    // It seems like I have to make a new Query Object everytime
-    queryObj.current = cb.current.Query("cceea4860cccdeb4c19d8884e27a");
-    queryObj.current.equalTo("item_id", clickedId);
-    queryObj.current.update(
+    // Second and lastly, update database
+    // Note: It seems like I have to make a new Query Object everytime
+    // if I cache queryObj using useRef, equalTo doesn't work as expected
+    const queryObj = cb.current.Query("cceea4860cccdeb4c19d8884e27a");
+    queryObj.equalTo("item_id", clickedId);
+    queryObj.update(
       {
         istodocompleted: newTodoCompletedValue,
       },
       (err, itemArray) => {
-        if (!err) {
-          setNotificationItems([...notificationItems, "Updated in DB!"]);
-        }
+        // add notification and setTimeout to remove it later
+        // I choose not to write in React because
+        // setState in setTimeout overcomplicates things
+        let newNotification = document.createElement("div");
+        newNotification.innerHTML = "Update Successful!";
+        newNotification.classList.add("notificationItem");
+        document
+          .getElementById("notificationQueneContainer")
+          .prepend(newNotification);
+
+        setTimeout(() => {
+          let NotificationList = document.querySelectorAll(
+            "#notificationQueneContainer > div.notificationItem"
+          );
+          if (NotificationList.length !== 0) {
+            let NotificationToRemove =
+              NotificationList[NotificationList.length - 1];
+            if (NotificationToRemove) {
+              NotificationToRemove.classList.remove("notificationItem");
+              NotificationToRemove.style.transition = "opacity 1s";
+              NotificationToRemove.style.opacity = "0";
+              setTimeout(() => {
+                NotificationToRemove.remove();
+              }, 1000);
+            }
+          }
+        }, 2500);
       }
     );
   };
@@ -99,7 +125,8 @@ function App() {
               </SlippableListItem>
             ))}
           </SlippableList>
-          <NotificationQuene notificationItems={notificationItems} />
+
+          <div id="notificationQueneContainer"></div>
         </div>
       )}
     </div>
@@ -107,40 +134,3 @@ function App() {
 }
 
 export default App;
-
-const NotificationQuene = ({ notificationItems }) => {
-  return (
-    <div className="notificationQueneContainer">
-      notification Quene
-      {notificationItems.map((eachMsg) => (
-        <div className="notificationItem">{eachMsg}</div>
-      ))}
-    </div>
-  );
-};
-
-const TodoItem = ({ todoData, onCheckBoxClick }) => {
-  let { istodocompleted, todoitem, item_id } = todoData;
-
-  return (
-    <div className="todoItemContainer">
-      <input
-        type="checkbox"
-        checked={istodocompleted}
-        onChange={() => {
-          onCheckBoxClick(item_id);
-        }}
-      />
-      <span
-        className="todoItemText"
-        style={
-          istodocompleted
-            ? { textDecoration: "line-through" }
-            : { textDecoration: "none" }
-        }
-      >
-        {todoitem}
-      </span>
-    </div>
-  );
-};

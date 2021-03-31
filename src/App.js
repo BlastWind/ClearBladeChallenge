@@ -9,13 +9,13 @@ function App() {
   const [isClientLoading, setIsClientLoading] = useState(true);
   const [isTodoLoading, setIsTodoLoading] = useState(true);
   const [todoItems, setTodoItems] = useState([]);
+  const [notificationItems, setNotificationItems] = useState([]);
   const queryObj = useRef(null);
   const collectionObj = useRef(null);
+  const cb = useRef(new ClearBlade());
 
   useEffect(() => {
-    const cb = new ClearBlade();
-
-    cb.init({
+    cb.current.init({
       URI: "https://platform.clearblade.com", // e.g., 'https://platform.clearblade.com'
       systemKey: "86daa4860cceef81fcbeef87a469",
       systemSecret: "86DAA4860CD8B5A7F7CDE4DFEC9101",
@@ -28,11 +28,13 @@ function App() {
       setIsClientLoading(false);
       // err is a boolean, cb has APIs and constructors attached
       if (err) {
-        throw new Error(cb);
+        throw new Error(cb.current);
       } else {
         // cached using useRef, so I can use in onCheckBoxClick
-        queryObj.current = cb.Query("cceea4860cccdeb4c19d8884e27a");
-        collectionObj.current = cb.Collection("cceea4860cccdeb4c19d8884e27a");
+        queryObj.current = cb.current.Query("cceea4860cccdeb4c19d8884e27a");
+        collectionObj.current = cb.current.Collection(
+          "cceea4860cccdeb4c19d8884e27a"
+        );
         collectionObj.current.fetch(queryObj.current, (err, itemArray) => {
           setIsTodoLoading(false);
           setTodoItems(itemArray);
@@ -46,13 +48,15 @@ function App() {
     // but that exposes item id to the user in the HTML!
 
     // First, updated local UI
+    let newTodoCompletedValue = null;
     const newItems = todoItems.map((eachItem, i) => {
       if (clickedId === eachItem.data.item_id) {
+        newTodoCompletedValue = !eachItem.data.istodocompleted;
         return {
           ...eachItem,
           data: {
             ...eachItem.data,
-            istodocompleted: !eachItem.data.istodocompleted,
+            istodocompleted: newTodoCompletedValue,
           },
         };
       }
@@ -61,14 +65,17 @@ function App() {
     setTodoItems(newItems);
 
     // Second and Lastly, update database
-
-    collectionObj.current.update(
-      queryObj.current,
+    // It seems like I have to make a new Query Object everytime
+    queryObj.current = cb.current.Query("cceea4860cccdeb4c19d8884e27a");
+    queryObj.current.equalTo("item_id", clickedId);
+    queryObj.current.update(
       {
-        istodocompleted: [true, true, true],
+        istodocompleted: newTodoCompletedValue,
       },
       (err, itemArray) => {
-        console.log({ err }, { itemArray });
+        if (!err) {
+          setNotificationItems(...notificationItems, "Update Success!");
+        }
       }
     );
   };
@@ -80,17 +87,20 @@ function App() {
       ) : isTodoLoading ? (
         <div>fetching todo items</div>
       ) : (
-        <SlippableList>
-          {todoItems.map((eachTodoItem) => (
-            <SlippableListItem key={eachTodoItem.data.item_id}>
-              <TodoItem
-                onCheckBoxClick={onCheckBoxClick}
-                todoData={eachTodoItem.data}
-                blockSwipe
-              />
-            </SlippableListItem>
-          ))}
-        </SlippableList>
+        <div className="todoListContainer">
+          <SlippableList>
+            {todoItems.map((eachTodoItem) => (
+              <SlippableListItem key={eachTodoItem.data.item_id}>
+                <TodoItem
+                  onCheckBoxClick={onCheckBoxClick}
+                  todoData={eachTodoItem.data}
+                  blockSwipe
+                />
+              </SlippableListItem>
+            ))}
+          </SlippableList>
+          <NotificationQuene notificationItems={notificationItems} />
+        </div>
       )}
     </div>
   );
@@ -98,11 +108,23 @@ function App() {
 
 export default App;
 
+const NotificationQuene = ({ notificationItems }) => {
+  console.log({ notificationItems });
+  return (
+    <div className="notificationQueneContainer">
+      notification Quene
+      {notificationItems.map((eachMsg) => (
+        <>{eachMsg}</>
+      ))}
+    </div>
+  );
+};
+
 const TodoItem = ({ todoData, onCheckBoxClick }) => {
   let { istodocompleted, todoitem, item_id } = todoData;
 
   return (
-    <>
+    <div className="todoItemContainer">
       <input
         type="checkbox"
         checked={istodocompleted}
@@ -110,7 +132,8 @@ const TodoItem = ({ todoData, onCheckBoxClick }) => {
           onCheckBoxClick(item_id);
         }}
       />
-      <div
+      <span
+        className="todoItemText"
         style={
           istodocompleted
             ? { textDecoration: "line-through" }
@@ -118,7 +141,7 @@ const TodoItem = ({ todoData, onCheckBoxClick }) => {
         }
       >
         {todoitem}
-      </div>
-    </>
+      </span>
+    </div>
   );
 };

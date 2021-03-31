@@ -29,12 +29,42 @@ function App() {
         var query = cb.Query("cceea4860cccdeb4c19d8884e27a");
         query.fetch((err, itemArray) => {
           setIsTodoLoading(false);
-          console.log({ itemArray });
+          // in case column is defined as string as opposed to bool
+          /*
+          const parsedBooleanItemArray = itemArray.map((eachItem) => {
+            return {
+              ...eachItem,
+              data: {
+                ...eachItem.data,
+                istodocompleted: eachItem.data.istodocompleted === "true",
+              },
+            };
+          });
+          */
           setTodoItems(itemArray);
         });
       }
     }
   }, []);
+
+  const onCheckBoxClick = (clickedId) => {
+    // could set id attribute on input field and use event.target.id here
+    // but that exposes item id to the user in the HTML!
+    const newItems = todoItems.map((eachItem, i) => {
+      if (clickedId === eachItem.data.item_id) {
+        return {
+          ...eachItem,
+          data: {
+            ...eachItem.data,
+            istodocompleted: !eachItem.data.istodocompleted,
+          },
+        };
+      }
+      return eachItem;
+    });
+
+    setTodoItems(newItems);
+  };
 
   return (
     <div className="App">
@@ -46,7 +76,10 @@ function App() {
         <div>
           {todoItems.map((eachTodoItem) => (
             <div key={eachTodoItem.data.item_id}>
-              <TodoItem todoData={eachTodoItem.data} />
+              <TodoItem
+                onCheckBoxClick={onCheckBoxClick}
+                todoData={eachTodoItem.data}
+              />
             </div>
           ))}
         </div>
@@ -57,14 +90,27 @@ function App() {
 
 export default App;
 
-const TodoItem = ({ todoData }) => {
-  const { istodocompleted, todoitem } = todoData;
-  console.log(istodocompleted, istodocompleted ? "true" : "false");
+const TodoItem = ({ todoData, onCheckBoxClick }) => {
+  let { istodocompleted, todoitem, item_id } = todoData;
 
   return (
-    <div style={istodocompleted ? { color: "blue" } : { color: "green" }}>
-      {todoitem}
-      {istodocompleted}
-    </div>
+    <>
+      <input
+        type="checkbox"
+        checked={istodocompleted}
+        onChange={() => {
+          onCheckBoxClick(item_id);
+        }}
+      />
+      <div
+        style={
+          istodocompleted
+            ? { textDecoration: "line-through" }
+            : { textDecoration: "none" }
+        }
+      >
+        {todoitem}
+      </div>
+    </>
   );
 };

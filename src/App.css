@@ -14,7 +14,20 @@
   position: absolute;
   left: 5px;
   top: 5px;
-
   display: flex;
   flex-direction: column;
+}
+
+.notificationItem {
+  background: #000;
+  color: silver;
+  padding-top: 12px;
+  padding-bottom: 12px;
+  text-size-adjust: 100%;
+  margin-top: 10px;
+  border-radius: 5px;
+  box-sizing: 0 0 1px #ccc;
+  display: block;
+  font-size: 12px;
+  text-align: center;
 }

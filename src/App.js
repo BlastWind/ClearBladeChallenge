@@ -74,7 +74,7 @@ function App() {
       },
       (err, itemArray) => {
         if (!err) {
-          setNotificationItems(...notificationItems, "Update Success!");
+          setNotificationItems([...notificationItems, "Updated in DB!"]);
         }
       }
     );
@@ -109,12 +109,11 @@ function App() {
 export default App;
 
 const NotificationQuene = ({ notificationItems }) => {
-  console.log({ notificationItems });
   return (
     <div className="notificationQueneContainer">
       notification Quene
       {notificationItems.map((eachMsg) => (
-        <>{eachMsg}</>
+        <div className="notificationItem">{eachMsg}</div>
       ))}
     </div>
   );

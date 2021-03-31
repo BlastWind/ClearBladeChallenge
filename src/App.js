@@ -6,6 +6,8 @@ import { useEffect, useState } from "react";
 
 function App() {
   const [isClientLoading, setIsClientLoading] = useState(true);
+  const [isTodoLoading, setIsTodoLoading] = useState(true);
+  const [todoItems, setTodoItems] = useState([]);
   useEffect(() => {
     const cb = new ClearBlade();
 
@@ -24,17 +26,12 @@ function App() {
       if (err) {
         throw new Error(cb);
       } else {
-        var collection = cb.Collection("test-collection");
-        collection.columns((err, columnsArray) => {
-          console.log({ columnsArray });
+        var query = cb.Query("cceea4860cccdeb4c19d8884e27a");
+        query.fetch((err, itemArray) => {
+          setIsTodoLoading(false);
+          console.log({ itemArray });
+          setTodoItems(itemArray);
         });
-        /*
-        collection.fetch(someQuery, collectionFetchCallback(err, rows) {
-          if (err) {
-            throw new Error(rows);
-        } 
-        })
-        */
       }
     }
   }, []);
@@ -43,11 +40,25 @@ function App() {
     <div className="App">
       {isClientLoading ? (
         <div>Client is loading, please be patient</div>
+      ) : isTodoLoading ? (
+        <div>fetching todo items</div>
       ) : (
-        <div>Client loaded! should be loading some collection stuff!</div>
+        <div>
+          {todoItems.map((eachTodoItem) => (
+            <div key={eachTodoItem.data.item_id}>
+              <TodoItem todoData={eachTodoItem.data} />
+            </div>
+          ))}
+        </div>
       )}
     </div>
   );
 }
 
 export default App;
+
+const TodoItem = ({ todoData }) => {
+  const { istodocompleted, todoitem } = todoData;
+
+  return <div>{todoitem}</div>;
+};

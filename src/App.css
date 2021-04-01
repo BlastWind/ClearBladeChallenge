@@ -1,13 +1,7 @@
 .todoListContainer {
   margin: 0 auto;
   padding: 2rem;
-}
-.todoItemContainer {
-  margin: 0 auto;
-}
-
-.todoItemText {
-  user-select: none;
+  text-align: center;
 }
 
 #notificationQueneContainer {

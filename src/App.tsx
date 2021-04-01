@@ -2,13 +2,13 @@ import "./App.css";
 import "clearblade-js-client/lib/mqttws31";
 import { ClearBlade } from "clearblade-js-client";
 import { useEffect, useState, useRef } from "react";
-import { SlippableList, SlippableListItem } from "react-slipping-list";
+// @ts-ignore
 import TodoItem from "./components/TodoItem.tsx";
 
 function App() {
-  const [isClientLoading, setIsClientLoading] = useState(true);
-  const [isTodoLoading, setIsTodoLoading] = useState(true);
-  const [todoItems, setTodoItems] = useState([]);
+  const [isClientLoading, setIsClientLoading] = useState<boolean>(true);
+  const [isTodoLoading, setIsTodoLoading] = useState<boolean>(true);
+  const [todoItems, setTodoItems] = useState<TodoItem[]>([]);
   const cb = useRef(new ClearBlade());
 
   useEffect(() => {
@@ -21,11 +21,10 @@ function App() {
       callback: initCallback,
     });
 
-    function initCallback(err, _) {
+    function initCallback(err: boolean) {
       setIsClientLoading(false);
-      // err is a boolean, cb has APIs and constructors attached
       if (err) {
-        throw new Error(cb.current);
+        throw new Error("ClearBlade Client initialization failed");
       } else {
         // cached using useRef, so I can use in onCheckBoxClick
         const queryObj = cb.current.Query("cceea4860cccdeb4c19d8884e27a");
@@ -34,7 +33,7 @@ function App() {
         );
         collectionObj.fetch(queryObj, (err, itemArray) => {
           if (err) {
-            throw new Error(err);
+            throw new Error("ClearBlade fetch failed");
           }
           setIsTodoLoading(false);
           setTodoItems(itemArray);
@@ -43,7 +42,7 @@ function App() {
     }
   }, []);
 
-  const onCheckBoxClick = (clickedId) => {
+  const onCheckBoxClick = (clickedId: string) => {
     // Implementation Decision:
     // could set id attribute on input field and use event.target.id here
     // but that exposes item id to the user in the HTML!
@@ -81,12 +80,14 @@ function App() {
         let newNotification = document.createElement("div");
         newNotification.innerHTML = "Update Successful!";
         newNotification.classList.add("notificationItem");
-        document
-          .getElementById("notificationQueneContainer")
-          .prepend(newNotification);
+        const notificationQueneContainer = document.getElementById(
+          "notificationQueneContainer"
+        );
+        if (notificationQueneContainer)
+          notificationQueneContainer.prepend(newNotification);
 
         setTimeout(() => {
-          let NotificationList = document.querySelectorAll(
+          let NotificationList: NodeListOf<HTMLElement> = document.querySelectorAll(
             "#notificationQueneContainer > div.notificationItem"
           );
           if (NotificationList.length !== 0) {
@@ -114,17 +115,14 @@ function App() {
         <div>fetching todo items</div>
       ) : (
         <div className="todoListContainer">
-          <SlippableList>
-            {todoItems.map((eachTodoItem) => (
-              <SlippableListItem key={eachTodoItem.data.item_id}>
-                <TodoItem
-                  onCheckBoxClick={onCheckBoxClick}
-                  todoData={eachTodoItem.data}
-                  blockSwipe
-                />
-              </SlippableListItem>
-            ))}
-          </SlippableList>
+          {todoItems.map((eachTodoItem) => (
+            <TodoItem
+              key={eachTodoItem.data.item_id}
+              onCheckBoxClick={onCheckBoxClick}
+              todoData={eachTodoItem.data}
+              blockSwipe
+            />
+          ))}
 
           <div id="notificationQueneContainer"></div>
         </div>
